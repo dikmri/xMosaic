@@ -1,21 +1,23 @@
 # xMosaic
 
-xMosaic は、成人・同意済み・権利処理済み素材だけを対象にした、ローカル実行型の動画モザイク CLI です。
+xMosaic は、成人・同意済み・権利処理済み素材だけを対象にした、ローカル実行型の動画モザイクアプリです。
 
 > xMosaic は、成人・同意済み・権利処理済み素材のみを対象にしています。
 > 未成年または若年に見える人物、同意のない素材、流出・私的素材、違法素材、モザイク除去・復元用途には使用しないでください。
 
-最初の実装では `DummyDetector` を同梱しています。成人向けサンプル、モデル重み、ネットワーク送信なしで、動画処理パイプライン全体を安全に検証できます。
+GUI は Electrobun で実装しています。動画処理コアは Python のまま維持し、Electrobun の WebView から Python worker をローカル実行します。ユーザー素材を外部送信しません。
 
 ## 機能
 
-- ローカル完結の動画処理
+- Electrobun による軽量デスクトップ GUI
+- ファイル選択ダイアログによる入力動画の選択
+- 出力フォルダ選択と出力ファイル名編集
 - FFmpeg による動画情報取得、フレーム抽出、再エンコード
 - ピクセルモザイクと黒塗りレンダリング
 - マスクの拡張、境界フェザー、時間方向スムージング
 - 安全な E2E テスト用 `DummyDetector`
 - HTML または JSON の品質確認レポート
-- Windows / macOS / Linux 向け Python CLI
+- Python CLI による自動処理
 
 ## クイックスタート
 
@@ -23,28 +25,39 @@ xMosaic は、成人・同意済み・権利処理済み素材だけを対象に
 
 ```bash
 python -m pip install -e ".[dev]"
-xmosaic doctor
-xmosaic inspect input.mp4
-xmosaic process input.mp4 -o output.mp4 --detector dummy --report report.html
+bun install
+bun run desktop:dev
 ```
 
 ## インストール
 
-公開パッケージとして配布後は次の形式で導入できます。
-
-```bash
-pipx install xmosaic
-xmosaic doctor
-```
-
 開発用チェックアウトから使う場合:
 
 ```bash
+python -m pip install -U pip
 python -m pip install -e ".[dev]"
+bun install
+```
+
+環境確認:
+
+```bash
 xmosaic doctor
 ```
 
-## 使い方
+## GUI の起動
+
+```bash
+bun run desktop:dev
+```
+
+Python CLI から起動する場合:
+
+```bash
+xmosaic gui
+```
+
+## CLI の使い方
 
 ```bash
 xmosaic inspect input.mp4
@@ -53,6 +66,15 @@ xmosaic process input.mp4 -o output.mp4 --report report.html
 ```
 
 現在の MVP で利用できる検出器は `dummy` のみです。YOLO セグメンテーション、SAM 2、ONNX Runtime バックエンドは後続フェーズで追加します。
+
+## 開発チェック
+
+```bash
+ruff check src tests
+pytest
+bun run desktop:typecheck
+bun run desktop:build
+```
 
 ## 安全ポリシー
 
@@ -66,17 +88,6 @@ xMosaic は次の用途を拒否・禁止します。
 - ユーザー素材のクラウドアップロードまたは外部送信
 
 公開リポジトリには、成人向けサンプル、成人向け学習済みモデル重み、権利不明データセットを含めません。
-
-## 開発
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-python -m pip install -U pip
-python -m pip install -e ".[dev]"
-pytest
-ruff check src tests
-```
 
 ## ライセンス
 

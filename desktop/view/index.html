@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>xMosaic</title>
+    <link rel="stylesheet" href="views://main/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h1>xMosaic</h1>
+            <p>ローカル動画モザイク処理</p>
+          </div>
+          <button id="inspectButton" class="secondary" type="button">動画情報</button>
+        </header>
+
+        <section class="drop-panel" id="inputPanel">
+          <div>
+            <span class="eyebrow">入力動画</span>
+            <strong id="inputLabel">未選択</strong>
+          </div>
+          <button id="chooseInputButton" type="button">動画を選択</button>
+        </section>
+
+        <section class="path-grid">
+          <label>
+            <span>出力動画</span>
+            <input id="outputPathInput" type="text" autocomplete="off" />
+          </label>
+          <button id="chooseOutputButton" class="secondary" type="button">出力フォルダ</button>
+          <label>
+            <span>QC レポート</span>
+            <input id="reportPathInput" type="text" autocomplete="off" />
+          </label>
+          <label class="switch">
+            <input id="reportEnabledInput" type="checkbox" checked />
+            <span>出力する</span>
+          </label>
+        </section>
+
+        <section class="run-panel">
+          <div>
+            <span id="statusLabel">待機中</span>
+            <progress id="progressBar" value="0" max="100"></progress>
+          </div>
+          <button id="runButton" class="primary" type="button">実行</button>
+          <button id="revealButton" class="secondary" type="button" disabled>表示</button>
+        </section>
+
+        <section class="log-panel">
+          <div class="section-title">ログ</div>
+          <ol id="logList"></ol>
+        </section>
+      </section>
+
+      <aside class="settings">
+        <div class="section-title">処理設定</div>
+        <label>
+          <span>プリセット</span>
+          <select id="presetInput">
+            <option value="light">light</option>
+            <option value="balanced" selected>balanced</option>
+            <option value="fanza-strong">fanza-strong</option>
+            <option value="black-box">black-box</option>
+          </select>
+        </label>
+        <label>
+          <span>検出器</span>
+          <select id="detectorInput">
+            <option value="dummy" selected>dummy</option>
+          </select>
+        </label>
+        <label>
+          <span>デバイス</span>
+          <select id="deviceInput">
+            <option value="auto" selected>auto</option>
+            <option value="cpu">cpu</option>
+            <option value="cuda">cuda</option>
+            <option value="mps">mps</option>
+          </select>
+        </label>
+        <label>
+          <span>信頼度しきい値</span>
+          <input id="confidenceInput" type="number" min="0" max="1" step="0.05" value="0.25" />
+        </label>
+        <label>
+          <span>マスク拡張 px</span>
+          <input id="dilationInput" type="number" min="0" max="128" step="1" value="20" />
+        </label>
+        <label>
+          <span>時間平滑化</span>
+          <input id="smoothingInput" type="number" min="1" max="31" step="2" value="5" />
+        </label>
+        <label class="switch">
+          <input id="keepTempInput" type="checkbox" />
+          <span>一時フレームを残す</span>
+        </label>
+        <div class="safety">
+          成人・同意済み・権利処理済み素材のみ。未成年、非同意、流出、違法素材、モザイク除去用途は禁止です。
+        </div>
+      </aside>
+    </main>
+    <script type="module" src="views://main/index.js"></script>
+  </body>
+</html>
+

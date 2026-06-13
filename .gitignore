@@ -5,6 +5,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+node_modules/
+artifacts/
+*.bun-build/
 build/
 dist/
 .coverage
@@ -21,4 +24,3 @@ dataset_raw/
 dataset_processed/
 dataset_rejected/
 .xmosaic-temp/
-

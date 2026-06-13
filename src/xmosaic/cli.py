@@ -168,6 +168,14 @@ def process(
         console.print(f"Report: {report}")
 
 
+@app.command()
+def gui() -> None:
+    """Launch the Electrobun desktop GUI from a source checkout."""
+    from xmosaic.electrobun_launcher import main as gui_main
+
+    gui_main()
+
+
 def _not_implemented(command: str) -> None:
     console.print(f"{command} is planned for a later phase.")
     raise typer.Exit(code=2)

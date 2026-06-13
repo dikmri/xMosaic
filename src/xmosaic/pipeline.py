@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -14,6 +15,8 @@ from xmosaic.mosaic.mask_ops import combine_masks, smooth_masks
 from xmosaic.mosaic.renderer import apply_mosaic
 from xmosaic.report import ProcessReport, write_qc_report
 from xmosaic.report.qc_report import FrameIssue
+
+ProgressCallback = Callable[[str, int | None, int | None, str], None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +88,12 @@ def process_video(
     output_path: Path,
     options: ProcessOptions,
     report_path: Path | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> ProcessResult:
+    def emit(stage: str, completed: int | None, total: int | None, message: str) -> None:
+        if progress_callback is not None:
+            progress_callback(stage, completed, total, message)
+
     input_path = input_path.resolve()
     output_path = output_path.resolve()
     if input_path == output_path:
@@ -103,6 +111,7 @@ def process_video(
     issues: list[FrameIssue] = []
 
     try:
+        emit("extract", None, None, "フレームを抽出しています")
         frame_count = extract_frames(input_path, frames_dir)
         frame_paths = list_frame_files(frames_dir)
         if frame_count == 0 or not frame_paths:
@@ -110,6 +119,7 @@ def process_video(
 
         masks = []
         for frame_index, frame_path in enumerate(frame_paths):
+            emit("detect", frame_index + 1, frame_count, "マスクを検出しています")
             frame = _read_frame(frame_path)
             detections = detector.detect(frame, frame_index=frame_index)
             filtered = _filter_detections(
@@ -123,6 +133,7 @@ def process_video(
         smoothed_masks = smooth_masks(masks, options.temporal_smoothing)
         frame_mask_pairs = zip(frame_paths, smoothed_masks, strict=True)
         for frame_index, (frame_path, mask) in enumerate(frame_mask_pairs):
+            emit("render", frame_index + 1, frame_count, "モザイクを描画しています")
             frame = _read_frame(frame_path)
             rendered = apply_mosaic(
                 frame,
@@ -134,6 +145,7 @@ def process_video(
             if mask.max() == 0:
                 issues.append(FrameIssue(frame_index=frame_index, reason="empty mask"))
 
+        emit("encode", None, None, "動画を書き出しています")
         encode_frames(rendered_dir, input_path, output_path, metadata.fps)
 
         report = ProcessReport(
@@ -146,7 +158,9 @@ def process_video(
             temp_dir=str(temp_dir) if options.keep_temp else None,
         )
         if report_path is not None:
+            emit("report", None, None, "QC レポートを書き出しています")
             write_qc_report(report_path, report)
+        emit("done", frame_count, frame_count, "完了しました")
         return ProcessResult(output_path=output_path, report=report)
     finally:
         if not options.keep_temp:

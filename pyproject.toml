@@ -55,6 +55,7 @@ dev = [
 
 [project.scripts]
 xmosaic = "xmosaic.cli:main"
+xmosaic-gui = "xmosaic.electrobun_launcher:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/xmosaic"]
