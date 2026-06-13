@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { basename, dirname, join, parse, resolve, sep } from "node:path";
+import { basename, dirname, join, parse, resolve } from "node:path";
 
 import { BrowserView, BrowserWindow, Screen, Utils } from "electrobun/bun";
 
@@ -24,6 +24,7 @@ type WorkerJson =
   | { type: "error"; message: string };
 
 const repoRoot = resolve(process.cwd());
+const sourcePath = join(repoRoot, "src");
 const python = resolvePython();
 let processing = false;
 
@@ -136,12 +137,16 @@ function resolvePython(): string {
 
 function workerEnv(): Record<string, string> {
   const pathSeparator = process.platform === "win32" ? ";" : ":";
-  const srcPath = join(repoRoot, "src");
-  return {
+  const env: Record<string, string> = {
     ...process.env,
-    PYTHONPATH: process.env.PYTHONPATH ? `${srcPath}${pathSeparator}${process.env.PYTHONPATH}` : srcPath,
     PYTHONUTF8: "1",
   };
+  if (existsSync(join(sourcePath, "xmosaic"))) {
+    env.PYTHONPATH = process.env.PYTHONPATH
+      ? `${sourcePath}${pathSeparator}${process.env.PYTHONPATH}`
+      : sourcePath;
+  }
+  return env;
 }
 
 function normalizeDialogPath(value: unknown): string | null {
@@ -258,10 +263,6 @@ async function runWorker(
   args: string[],
   onEvent?: (event: WorkerJson) => void,
 ): Promise<WorkerJson[]> {
-  if (!existsSync(join(repoRoot, "src", "xmosaic"))) {
-    throw new Error(`xMosaic の Python ソースが見つかりません: ${repoRoot}${sep}src`);
-  }
-
   const proc = Bun.spawn({
     cmd: [python, "-m", "xmosaic.electrobun_worker", ...args],
     cwd: repoRoot,

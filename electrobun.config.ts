@@ -4,7 +4,7 @@ export default {
   app: {
     name: "xMosaic",
     identifier: "jp.daikimarui.xmosaic",
-    version: "0.1.0",
+    version: "0.1.1",
   },
   runtime: {
     exitOnLastWindowClosed: true,
@@ -25,4 +25,3 @@ export default {
     },
   },
 } satisfies ElectrobunConfig;
-

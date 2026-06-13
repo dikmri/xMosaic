@@ -4,10 +4,14 @@
 
 ## 1. 前提
 
+- Windows、macOS、Linux のいずれか
+
+Windows の利用者向け1行インストールでは、Python と FFmpeg が見つからない場合に `winget` での自動インストールを試みます。
+開発用チェックアウトから実行する場合は、次のツールを事前に用意してください。
+
 - Python 3.11 以上
 - Bun
 - FFmpeg と FFprobe
-- Windows、macOS、Linux のいずれか
 
 確認:
 
@@ -20,7 +24,13 @@ ffprobe -version
 
 ## 2. インストール
 
-リポジトリのルートで実行します。
+WindowsでGUI版をインストールする場合は、PowerShellで次の1行を実行します。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/dikmri/xMosaic/main/scripts/install.ps1 | iex"
+```
+
+開発用チェックアウトから使う場合は、リポジトリのルートで実行します。
 
 ```bash
 python -m pip install -U pip
@@ -100,4 +110,3 @@ bun run desktop:build
 ```
 
 テストでは無害な合成動画だけを生成します。公開リポジトリに成人向けサンプルやモデル重みを含めないでください。
-
