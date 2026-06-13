@@ -1,0 +1,7 @@
+preset: balanced
+device: auto
+confidence_threshold: 0.25
+mask_dilation: 20
+temporal_smoothing: 5
+detector: dummy
+
