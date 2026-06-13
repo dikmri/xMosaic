@@ -66,32 +66,40 @@ function byId<T extends typeof HTMLElement>(id: string, expected: T): InstanceTy
 }
 
 async function chooseInputVideo(): Promise<void> {
-  const result = await electrobun.rpc!.request.chooseInputVideo({});
-  if (!result) {
-    return;
+  try {
+    const result = await electrobun.rpc!.request.chooseInputVideo({});
+    if (!result) {
+      return;
+    }
+    state.inputPath = result.inputPath;
+    state.outputPath = result.outputPath;
+    state.reportPath = result.reportPath;
+    inputLabel.textContent = result.inputPath;
+    outputPathInput.value = result.outputPath;
+    reportPathInput.value = result.reportPath;
+    progressBar.value = 0;
+    setStatus("動画を選択しました");
+    appendLog("入力動画を選択しました");
+  } catch (error) {
+    showError(error);
   }
-  state.inputPath = result.inputPath;
-  state.outputPath = result.outputPath;
-  state.reportPath = result.reportPath;
-  inputLabel.textContent = result.inputPath;
-  outputPathInput.value = result.outputPath;
-  reportPathInput.value = result.reportPath;
-  progressBar.value = 0;
-  setStatus("動画を選択しました");
-  appendLog("入力動画を選択しました");
 }
 
 async function chooseOutputFolder(): Promise<void> {
-  const outputPath = await electrobun.rpc!.request.chooseOutputFolder({
-    inputPath: state.inputPath,
-    currentOutputPath: state.outputPath,
-  });
-  if (!outputPath) {
-    return;
+  try {
+    const outputPath = await electrobun.rpc!.request.chooseOutputFolder({
+      inputPath: state.inputPath,
+      currentOutputPath: state.outputPath,
+    });
+    if (!outputPath) {
+      return;
+    }
+    state.outputPath = outputPath;
+    outputPathInput.value = outputPath;
+    appendLog("出力フォルダを更新しました");
+  } catch (error) {
+    showError(error);
   }
-  state.outputPath = outputPath;
-  outputPathInput.value = outputPath;
-  appendLog("出力フォルダを更新しました");
 }
 
 async function inspectVideo(): Promise<void> {
@@ -168,6 +176,10 @@ function handleProcessEvent(event: ProcessEvent): void {
     if (event.completed !== null && event.total) {
       progressBar.value = Math.round((event.completed / event.total) * 100);
     }
+    return;
+  }
+  if (event.type === "notice") {
+    appendLog(event.message);
     return;
   }
   if (event.type === "done") {

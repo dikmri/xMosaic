@@ -38,6 +38,11 @@ export type ProcessErrorEvent = {
   message: string;
 };
 
+export type ProcessNoticeEvent = {
+  type: "notice";
+  message: string;
+};
+
 export type ProcessDoneEvent = {
   type: "done";
   outputPath: string;
@@ -46,7 +51,11 @@ export type ProcessDoneEvent = {
   reportPath: string | null;
 };
 
-export type ProcessEvent = ProcessProgressEvent | ProcessErrorEvent | ProcessDoneEvent;
+export type ProcessEvent =
+  | ProcessProgressEvent
+  | ProcessErrorEvent
+  | ProcessNoticeEvent
+  | ProcessDoneEvent;
 
 export type PathSuggestion = {
   inputPath: string;
@@ -113,4 +122,3 @@ export type XMosaicRPC = {
     };
   }>;
 };
-

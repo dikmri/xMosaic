@@ -1,7 +1,8 @@
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, dirname, join, parse, resolve } from "node:path";
 
-import { BrowserView, BrowserWindow, Screen, Utils } from "electrobun/bun";
+import { BrowserView, BrowserWindow, Screen, Updater, Utils } from "electrobun/bun";
 
 import type {
   InspectResult,
@@ -26,6 +27,7 @@ type WorkerJson =
 const repoRoot = resolve(process.cwd());
 const sourcePath = join(repoRoot, "src");
 const python = resolvePython();
+const supportedVideoExtensions = new Set([".mp4", ".mov", ".mkv", ".webm"]);
 let processing = false;
 
 const rpc = BrowserView.defineRPC<XMosaicRPC>({
@@ -35,7 +37,7 @@ const rpc = BrowserView.defineRPC<XMosaicRPC>({
       chooseInputVideo: async () => {
         const chosen = await Utils.openFileDialog({
           startingFolder: Utils.paths.videos,
-          allowedFileTypes: "mp4,mov,mkv,webm",
+          allowedFileTypes: "*",
           canChooseFiles: true,
           canChooseDirectory: false,
           allowsMultipleSelection: false,
@@ -43,6 +45,10 @@ const rpc = BrowserView.defineRPC<XMosaicRPC>({
         const inputPath = normalizeDialogPath(chosen);
         if (!inputPath) {
           return null;
+        }
+        const ext = parse(inputPath).ext.toLowerCase();
+        if (!supportedVideoExtensions.has(ext)) {
+          throw new Error("対応している動画形式は mp4, mov, mkv, webm です。");
         }
         return suggestPaths(inputPath);
       },
@@ -114,10 +120,17 @@ mainWindow = new BrowserWindow<typeof rpc>({
   rpc,
 });
 
+setTimeout(() => {
+  void checkForUpdatesOnStartup();
+}, 1500);
+
 function resolvePython(): string {
-  const candidates = [process.env.XMOSAIC_PYTHON, "python", "python3"].filter(
-    Boolean,
-  ) as string[];
+  const candidates = [
+    process.env.XMOSAIC_PYTHON,
+    defaultInstalledPython(),
+    "python",
+    "python3",
+  ].filter(Boolean) as string[];
   for (const candidate of candidates) {
     try {
       const probe = Bun.spawnSync({
@@ -135,12 +148,27 @@ function resolvePython(): string {
   return candidates[0] ?? "python";
 }
 
+function defaultInstalledPython(): string | null {
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA;
+    return localAppData ? join(localAppData, "xMosaic", "python", "Scripts", "python.exe") : null;
+  }
+  if (process.platform === "darwin") {
+    return join(homedir(), "Library", "Application Support", "xMosaic", "python", "bin", "python");
+  }
+  const dataHome = process.env.XDG_DATA_HOME || join(homedir(), ".local", "share");
+  return join(dataHome, "xMosaic", "python", "bin", "python");
+}
+
 function workerEnv(): Record<string, string> {
   const pathSeparator = process.platform === "win32" ? ";" : ":";
-  const env: Record<string, string> = {
-    ...process.env,
-    PYTHONUTF8: "1",
-  };
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (typeof value === "string") {
+      env[key] = value;
+    }
+  }
+  env.PYTHONUTF8 = "1";
   if (existsSync(join(sourcePath, "xmosaic"))) {
     env.PYTHONPATH = process.env.PYTHONPATH
       ? `${sourcePath}${pathSeparator}${process.env.PYTHONPATH}`
@@ -289,6 +317,35 @@ async function runWorker(
   return events;
 }
 
+async function checkForUpdatesOnStartup(): Promise<void> {
+  try {
+    sendNotice("アップデートを確認しています。");
+    const update = await Updater.checkForUpdate();
+    if (!update.updateAvailable) {
+      sendNotice("最新版を使用しています。");
+      return;
+    }
+
+    sendNotice("最新版をダウンロードしています。完了後に自動で再起動します。");
+    Utils.showNotification({
+      title: "xMosaic",
+      body: "最新版をダウンロードしています。",
+      silent: true,
+    });
+
+    await Updater.downloadUpdate();
+    const currentUpdate = Updater.updateInfo();
+    if (currentUpdate?.updateReady) {
+      sendNotice("アップデートを適用して再起動します。");
+      await Updater.applyUpdate();
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Update check failed: ${message}`);
+    sendNotice(`アップデート確認に失敗しました: ${message}`);
+  }
+}
+
 async function readJsonLines(
   stream: ReadableStream<Uint8Array>,
   onEvent: (event: WorkerJson) => void,
@@ -335,4 +392,8 @@ async function readText(stream: ReadableStream<Uint8Array>): Promise<string> {
 
 function sendToView(event: ProcessEvent): void {
   mainWindow?.webview.rpc?.send.processEvent(event);
+}
+
+function sendNotice(message: string): void {
+  sendToView({ type: "notice", message });
 }

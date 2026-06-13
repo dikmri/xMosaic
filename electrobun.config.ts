@@ -4,7 +4,7 @@ export default {
   app: {
     name: "xMosaic",
     identifier: "jp.daikimarui.xmosaic",
-    version: "0.1.1",
+    version: "0.1.2",
   },
   runtime: {
     exitOnLastWindowClosed: true,
@@ -23,5 +23,8 @@ export default {
       "desktop/view/index.html": "views/main/index.html",
       "desktop/view/styles.css": "views/main/styles.css",
     },
+  },
+  release: {
+    baseUrl: "https://github.com/dikmri/xMosaic/releases/latest/download",
   },
 } satisfies ElectrobunConfig;
